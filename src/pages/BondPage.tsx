@@ -49,6 +49,8 @@ export function BondPage() {
     queryFn: fetchTokens,
     staleTime: 0,
     refetchOnMount: 'always',
+    /** Keep the list in sync with the backend when new tokens or indexer updates arrive. */
+    refetchInterval: 15_000,
   })
 
   const { active, graduated, isLoading: dexLoading, dexReadError } =

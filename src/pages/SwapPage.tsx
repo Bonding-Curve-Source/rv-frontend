@@ -11,7 +11,7 @@ export function SwapPage() {
           DEX SWAP
         </h1>
         <p className="mt-2 font-pixel text-[8px] text-[#a78bfa]">
-          Router V2 · slippage · approve
+          Router V2 · ERC20: approve (step 1) then swap (step 2)
         </p>
       </div>
 

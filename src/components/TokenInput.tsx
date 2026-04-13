@@ -6,7 +6,7 @@ type Props = {
   onChange: (v: string) => void
   symbol?: string
   balanceLabel?: string
-  /** Nút MAX (vd. fill tới mức còn thiếu để full bond) — hiện cạnh dòng balance. */
+  /** MAX button (e.g. fill remaining amount to complete the bond) — shown next to the balance row. */
   maxButton?: {
     onClick: () => void
     disabled?: boolean

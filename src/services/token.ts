@@ -7,7 +7,7 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-/** Bản ghi catalog RaiseToken (ảnh, symbol hiển thị) — join theo raiseToken */
+/** RaiseToken catalog row (image, display symbol) — joined by raiseToken */
 export type RaiseTokenInfo = {
   id: number
   tokenAddress: string
@@ -23,9 +23,9 @@ export type BondToken = {
   tokenAddress: string
   bondingCurve: string
   creatorAddress: string
-  /** Địa chỉ on-chain — trùng raiseAsset.tokenAddress khi có catalog */
+  /** On-chain address — matches raiseAsset.tokenAddress when catalog exists */
   raiseToken: string
-  /** uint256 on-chain — chuỗi thập phân đầy đủ từ API */
+  /** uint256 on-chain — full decimal string from the API */
   targetValue?: string
   raiseAsset?: RaiseTokenInfo
   name: string

@@ -16,10 +16,10 @@ export function useWallet() {
   const setAccessToken = useAuthStore((s) => s.setAccessToken)
   const logoutStore = useAuthStore((s) => s.logout)
 
-  const signIn = useCallback(async () => {
+  const signIn = useCallback(async (): Promise<boolean> => {
     if (!address) {
       toast.error('Connect your wallet first')
-      return
+      return false
     }
     try {
       const { message } = await fetchNonce(address)
@@ -27,6 +27,7 @@ export function useWallet() {
       const { accessToken: token } = await loginWithSignature(address, signature)
       setAccessToken(token)
       toast.success('Signed in successfully')
+      return true
     } catch (e: unknown) {
       let msg = ''
       if (axios.isAxiosError(e)) {
@@ -38,6 +39,7 @@ export function useWallet() {
       toast.error(
         msg || (e instanceof Error ? e.message : 'Sign-in failed'),
       )
+      return false
     }
   }, [address, setAccessToken, signMessageAsync])
 

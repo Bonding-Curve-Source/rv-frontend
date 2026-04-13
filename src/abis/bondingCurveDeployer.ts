@@ -1,4 +1,4 @@
-/** BondingCurveDeployer — đồng bộ contract-bonding (deploy script gọi setCurveDeployer). */
+/** BondingCurveDeployer — synced with contract-bonding (deploy script calls setCurveDeployer). */
 export const bondingCurveDeployerAbi = [
   {
     "inputs": [

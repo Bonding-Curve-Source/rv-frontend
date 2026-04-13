@@ -20,9 +20,9 @@ export type CreateTokenForm = {
   twitter: string
   telegram: string
   website: string
-  /** Mục tiêu raise theo USD (hiển thị cho user) — gửi on-chain dạng 1e18 */
+  /** Raise target in USD (user-facing) — sent on-chain scaled 1e18 */
   targetMarketCapUsd: string
-  /** Token dùng để raise (0x0 = native BNB/ETH) */
+  /** Token used for raising (0x0 = native BNB/ETH) */
   tokenRaise: Address
 }
 
@@ -49,7 +49,7 @@ export function useCreateToken(symbolDraft: string, tokenRaiseDraft: Address) {
     query: { enabled: factoryReady },
   })
 
-  /** TokenFactory tách `new BondingCurve` sang BondingCurveDeployer — phải set on-chain (deploy script). */
+  /** TokenFactory delegates `new BondingCurve` to BondingCurveDeployer — must be set on-chain (deploy script). */
   const {
     data: curveDeployerAddress,
     isPending: curveDeployerPending,
@@ -79,7 +79,7 @@ export function useCreateToken(symbolDraft: string, tokenRaiseDraft: Address) {
   })
 
   const erc20Raise = !isAddressEqual(tokenRaiseDraft, zeroAddress)
-  /** On-chain whitelist: `mapping(address => bool) public raiseAllowedTokens` (getter cùng tên). */
+  /** On-chain whitelist: `mapping(address => bool) public raiseAllowedTokens` (same-name getter). */
   const {
     data: raiseTokenAllowed,
     isPending: raiseTokenCheckPending,
@@ -179,14 +179,14 @@ export function useCreateToken(symbolDraft: string, tokenRaiseDraft: Address) {
       }
       const capRaw = form.targetMarketCapUsd.trim().replace(/,/g, '')
       if (!capRaw || Number.isNaN(Number(capRaw)) || Number(capRaw) <= 0) {
-        toast.error('Nhập market cap raise (USD) hợp lệ')
+        toast.error('Enter a valid market cap raise (USD)')
         return
       }
       let targetValue: bigint
       try {
         targetValue = parseUnits(capRaw, 18)
       } catch {
-        toast.error('Market cap raise (USD) không hợp lệ')
+        toast.error('Market cap raise (USD) is invalid')
         return
       }
       if (creationFeeWei === undefined) {
@@ -242,7 +242,7 @@ export function useCreateToken(symbolDraft: string, tokenRaiseDraft: Address) {
     creationFeeWei,
     refetchFee,
     symbolTaken,
-    /** `true` | `false` từ contract; `undefined` khi chưa load hoặc không phải ERC20 raise */
+    /** `true` | `false` from the contract; `undefined` while loading or not ERC20 raise */
     raiseTokenAllowed: erc20Raise ? raiseTokenAllowed : true,
     raiseTokenCheckLoading,
     raiseTokenCheckError,

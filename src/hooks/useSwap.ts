@@ -135,13 +135,25 @@ export function useSwap(options?: UseSwapOptions) {
   })
 
   const {
-    writeContractAsync,
-    data: swapHash,
-    isPending: swapPending,
-    reset,
+    writeContractAsync: writeApproveAsync,
+    data: approveHash,
+    isPending: approvePending,
+    reset: resetApprove,
   } = useWriteContract()
 
-  const { isLoading: confirming, isSuccess: swapSuccess } =
+  const {
+    writeContractAsync: writeSwapAsync,
+    data: swapHash,
+    isPending: swapPending,
+    reset: resetSwap,
+  } = useWriteContract()
+
+  const { isLoading: approveConfirming, isSuccess: approveSuccess } =
+    useWaitForTransactionReceipt({
+      hash: approveHash,
+    })
+
+  const { isLoading: swapConfirming, isSuccess: swapSuccess } =
     useWaitForTransactionReceipt({
       hash: swapHash,
     })
@@ -154,23 +166,28 @@ export function useSwap(options?: UseSwapOptions) {
   const approve = useCallback(async () => {
     if (isWeth(tokenIn, weth) || !address) return
     try {
-      reset()
-      const h = await writeContractAsync({
+      resetApprove()
+      resetSwap()
+      const h = await writeApproveAsync({
         address: tokenIn,
         abi: erc20Abi,
         functionName: 'approve',
         args: [router, 2n ** 256n - 1n],
       })
-      toast.loading('Approving…', { id: h })
+      toast.loading('Approving router allowance…', { id: h })
       return h as Hash
     } catch (e) {
       toast.error(parseErr(e))
     }
-  }, [address, reset, router, tokenIn, writeContractAsync, weth])
+  }, [address, resetApprove, resetSwap, router, tokenIn, writeApproveAsync, weth])
 
   const swap = useCallback(async () => {
     if (!address) {
       toast.error('Connect your wallet')
+      return
+    }
+    if (needsApprove) {
+      toast.error('Approve the token for the router first (step 1)')
       return
     }
     if (amountInWei <= 0n) {
@@ -185,9 +202,10 @@ export function useSwap(options?: UseSwapOptions) {
     const to = address
 
     try {
-      reset()
+      resetSwap()
+      resetApprove()
       if (isWeth(tokenIn, weth) && !isWeth(tokenOut, weth)) {
-        const h = await writeContractAsync({
+        const h = await writeSwapAsync({
           address: router,
           abi: uniswapV2RouterAbi,
           functionName: 'swapExactETHForTokens',
@@ -198,7 +216,7 @@ export function useSwap(options?: UseSwapOptions) {
         return h as Hash
       }
       if (!isWeth(tokenIn, weth) && isWeth(tokenOut, weth)) {
-        const h = await writeContractAsync({
+        const h = await writeSwapAsync({
           address: router,
           abi: uniswapV2RouterAbi,
           functionName: 'swapExactTokensForETH',
@@ -207,7 +225,7 @@ export function useSwap(options?: UseSwapOptions) {
         toast.loading('Swapping token → ETH…', { id: h })
         return h as Hash
       }
-      const h = await writeContractAsync({
+      const h = await writeSwapAsync({
         address: router,
         abi: uniswapV2RouterAbi,
         functionName: 'swapExactTokensForTokens',
@@ -224,12 +242,14 @@ export function useSwap(options?: UseSwapOptions) {
     amountOutMin,
     expectedOut,
     path,
-    reset,
+    resetApprove,
+    resetSwap,
     router,
     tokenIn,
     tokenOut,
-    writeContractAsync,
+    writeSwapAsync,
     weth,
+    needsApprove,
   ])
 
   /** Raise asset → meme (e.g. BNB/USDT → DD). */
@@ -275,9 +295,14 @@ export function useSwap(options?: UseSwapOptions) {
     swap,
     refetchQuote,
     refetchAllowance,
+    approveHash: approveHash as Hash | undefined,
+    approvePending,
+    approveConfirming,
+    approveSuccess,
     swapHash: swapHash as Hash | undefined,
     swapPending,
-    confirming,
+    swapConfirming,
+    confirming: approveConfirming || swapConfirming,
     swapSuccess,
     setRaiseInMemeOut,
     setMemeInRaiseOut,

@@ -6,6 +6,7 @@ import { Button } from '@/components/Button'
 import { Card } from '@/components/Card'
 import { PixelSpinner } from '@/components/PixelSpinner'
 import { TokenInput } from '@/components/TokenInput'
+import { useAuthGate } from '@/hooks/useAuthGate'
 import { useBondingCurve } from '@/hooks/useBondingCurve'
 import { useBondingProgress } from '@/hooks/useBondingProgress'
 import type { BondToken } from '@/services/token'
@@ -74,6 +75,9 @@ export function BondTradeModal({ token, onClose }: Props) {
     estSellRaise,
     needsApproveForSell,
     needsApproveForBuy,
+    buyRaiseAllowanceLoading,
+    buyRaiseAllowanceError,
+    buyRaiseWei,
     approveSell,
     approveBuyRaise,
     buy,
@@ -96,6 +100,8 @@ export function BondTradeModal({ token, onClose }: Props) {
     canFillMaxBuyTowardFullBond,
     fillMaxBuyTowardFullBond,
   } = useBondingCurve(overrides)
+
+  const { ensureSignedIn, isConnected, isAuthenticated } = useAuthGate()
 
   const raiseLabelSymbol =
     token.raiseAsset?.symbol &&
@@ -426,13 +432,54 @@ export function BondTradeModal({ token, onClose }: Props) {
                     : '—'}
                 </span>
               </p>
-              {needsApproveForBuy ? (
+              {!isNativeRaise &&
+              buyPaymentMode === 'raise' &&
+              raiseKindReady &&
+              buyRaiseWei > 0n &&
+              (needsApproveForBuy || buyRaiseAllowanceLoading) ? (
+                <p className="mt-3 rounded border border-[#4c1d95] bg-[#1e1035]/80 px-2 py-2 font-pixel text-[7px] leading-relaxed text-[#c4b5fd]">
+                  <span className="text-[#ffee00]">ERC20 raise:</span> the bonding
+                  curve pulls {raiseLabelSymbol} via{' '}
+                  <code className="text-[#a78bfa]">transferFrom</code>.{' '}
+                  <strong>Step 1</strong> — approve <strong>max</strong> allowance
+                  for the curve; <strong>Step 2</strong> — buy tokens.
+                </p>
+              ) : null}
+              {buyRaiseAllowanceError &&
+              !isNativeRaise &&
+              buyPaymentMode === 'raise' &&
+              buyRaiseWei > 0n ? (
+                <p className="mt-3 font-pixel text-[8px] leading-relaxed text-[#fb7185]">
+                  Could not read {raiseLabelSymbol} allowance. Check the RPC, then{' '}
+                  <button
+                    type="button"
+                    className="underline text-[#ffee00]"
+                    onClick={() => void refetchAll()}
+                  >
+                    retry
+                  </button>
+                  .
+                </p>
+              ) : null}
+              {buyRaiseAllowanceLoading ? (
                 <Button
                   className="mt-3 w-full py-3"
-                  disabled={busy || !raiseKindReady}
-                  onClick={() => void approveBuyRaise()}
+                  disabled
                 >
-                  {busy ? 'Processing…' : `Approve ${raiseLabelSymbol}`}
+                  Checking allowance…
+                </Button>
+              ) : needsApproveForBuy ? (
+                <Button
+                  className="mt-3 w-full py-3"
+                  disabled={busy || !raiseKindReady || !isConnected}
+                  onClick={async () => {
+                    if (!(await ensureSignedIn())) return
+                    void approveBuyRaise()
+                  }}
+                >
+                  {busy
+                    ? 'Processing…'
+                    : `Approve ${raiseLabelSymbol} (max)`}
                 </Button>
               ) : (
                 <Button
@@ -440,12 +487,20 @@ export function BondTradeModal({ token, onClose }: Props) {
                   disabled={
                     busy ||
                     !raiseKindReady ||
+                    !isConnected ||
                     buyQuoteExceedsMax ||
+                    (!isNativeRaise &&
+                      buyPaymentMode === 'raise' &&
+                      buyRaiseWei > 0n &&
+                      buyRaiseAllowanceError) ||
                     (!isNativeRaise &&
                       buyPaymentMode === 'bnb' &&
                       (buyBnbWei <= 0n || !bnbBuyQuoteReady))
                   }
-                  onClick={() => void buy()}
+                  onClick={async () => {
+                    if (!(await ensureSignedIn())) return
+                    void buy()
+                  }}
                 >
                   {busy ? 'Processing…' : 'Buy tokens'}
                 </Button>
@@ -480,10 +535,11 @@ export function BondTradeModal({ token, onClose }: Props) {
               <Button
                 variant="accent"
                 className="mt-3 w-full py-3"
-                disabled={busy}
-                onClick={() =>
+                disabled={busy || !isConnected}
+                onClick={async () => {
+                  if (!(await ensureSignedIn())) return
                   void (needsApproveForSell ? approveSell() : sell())
-                }
+                }}
               >
                 {busy
                   ? 'Processing…'
@@ -493,6 +549,13 @@ export function BondTradeModal({ token, onClose }: Props) {
               </Button>
             </div>
           </div>
+
+          {isConnected && !isAuthenticated ? (
+            <p className="mt-4 rounded border border-[#4c1d95] bg-[#1e1035]/80 px-2 py-2 font-pixel text-[7px] leading-relaxed text-[#fbbf24]">
+              Buy/sell requires a sign-in message — the first tap opens signing,
+              then the transaction is sent.
+            </p>
+          ) : null}
 
           {busy ? (
             <div className="mt-6 flex justify-center">

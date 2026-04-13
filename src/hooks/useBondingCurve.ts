@@ -37,7 +37,7 @@ const wbnbDepositAbi = [
   },
 ] as const
 
-/** Chuỗi ô nhập: đủ precision để `parseUnits` khớp lại đúng `raw` (không cắt 14 số — sẽ lệch wei, kẹt ~99.9% bond). */
+/** Input string: enough precision so `parseUnits` round-trips to the same `raw` (clipping decimals skews wei / bond progress). */
 function formatRaiseInputString(raw: bigint, decimals: number): string {
   const s = safeFormatUnits(raw, decimals)
   if (!s.includes('.')) return s
@@ -321,7 +321,7 @@ export function useBondingCurve(overrides?: BondingCurveOverrides) {
     maxBuyInitialAntiBotRaw,
   ])
 
-  /** Raise (raw) còn thiếu để `totalTokenIn` đạt `TARGET_TOKEN_BALANCE` (listing). */
+  /** Raise (raw) still needed for `totalTokenIn` to reach `TARGET_TOKEN_BALANCE` (listing). */
   const remainingRaiseToGraduationRaw = useMemo(() => {
     if (isDex === true) return 0n
     if (
@@ -395,14 +395,17 @@ export function useBondingCurve(overrides?: BondingCurveOverrides) {
     query: { enabled: Boolean(token && curve && address) },
   })
 
-  const { data: buyRaiseAllowance, refetch: refetchBuyRaiseAllowance } =
-    useReadContract({
-      address: raiseTokenAddr,
-      abi: erc20Abi,
-      functionName: 'allowance',
-      args: address && raiseTokenAddr ? [address, curve] : undefined,
-      query: { enabled: Boolean(raiseTokenAddr && curve && address) },
-    })
+  const {
+    data: buyRaiseAllowance,
+    refetch: refetchBuyRaiseAllowance,
+    isError: buyRaiseAllowanceError,
+  } = useReadContract({
+    address: raiseTokenAddr,
+    abi: erc20Abi,
+    functionName: 'allowance',
+    args: address && raiseTokenAddr ? [address, curve] : undefined,
+    query: { enabled: Boolean(raiseTokenAddr && curve && address) },
+  })
 
   const {
     writeContractAsync,
@@ -578,7 +581,7 @@ export function useBondingCurve(overrides?: BondingCurveOverrides) {
       resetWrite()
       const pc = getPublicClient(wagmiConfig)
 
-      /** Raise = WBNB: không dùng `buyTokenWithBNB` (path WBNB→WBNB trên router). Wrap rồi mua như CAKE từ ví. */
+      /** Raise = WBNB: do not use `buyTokenWithBNB` (no WBNB→WBNB path on router). Wrap then buy like other ERC20 raises from the wallet. */
       if (isRaiseSameAsWeth) {
         const beforeBal = await pc.readContract({
           address: raiseTokenAddr,
@@ -637,7 +640,7 @@ export function useBondingCurve(overrides?: BondingCurveOverrides) {
         return buyHash
       }
 
-      /** CAKE / ERC20 raise khác WBNB: một tx — TokenFactory swap BNB→raise rồi bonding curve. */
+      /** CAKE / non-WBNB ERC20 raise: one tx — TokenFactory swaps BNB→raise then bonding curve. */
       const amounts = await pc.readContract({
         address: routerAddr,
         abi: uniswapV2RouterAbi,
@@ -710,6 +713,32 @@ export function useBondingCurve(overrides?: BondingCurveOverrides) {
       toast.error(`Enter an amount greater than 0 (${raiseSymbol})`)
       return
     }
+    const insufficientRaiseAllowance =
+      !isNativeRaise &&
+      buyPaymentMode === 'raise' &&
+      raiseTokenAddr !== undefined &&
+      buyRaiseWei > 0n &&
+      buyRaiseAllowance !== undefined &&
+      buyRaiseWei > buyRaiseAllowance
+    if (insufficientRaiseAllowance) {
+      toast.error(
+        `Approve ${raiseSymbol} for the bonding curve first (max allowance)`,
+      )
+      return
+    }
+    if (
+      !isNativeRaise &&
+      buyPaymentMode === 'raise' &&
+      buyRaiseWei > 0n &&
+      buyRaiseAllowance === undefined
+    ) {
+      if (buyRaiseAllowanceError) {
+        toast.error('Could not read raise token allowance — check RPC and retry')
+      } else {
+        toast.error('Still checking raise token allowance — wait a moment')
+      }
+      return
+    }
     try {
       resetWrite()
       const h = await writeContractAsync({
@@ -726,11 +755,14 @@ export function useBondingCurve(overrides?: BondingCurveOverrides) {
     }
   }, [
     buyPaymentMode,
+    buyRaiseAllowance,
+    buyRaiseAllowanceError,
     buyRaiseWei,
     buyWithBnb,
     factory,
     isNativeRaise,
     raiseSymbol,
+    raiseTokenAddr,
     resetWrite,
     token,
     writeContractAsync,
@@ -746,7 +778,7 @@ export function useBondingCurve(overrides?: BondingCurveOverrides) {
         functionName: 'approve',
         args: [curve, 2n ** 256n - 1n],
       })
-      toast.loading('Approving raise token…', { id: h })
+      toast.loading('Approving max spend for bonding curve…', { id: h })
       return h
     } catch (e) {
       toast.error(parseContractError(e))
@@ -807,6 +839,15 @@ export function useBondingCurve(overrides?: BondingCurveOverrides) {
     buyRaiseAllowance !== undefined &&
     buyRaiseWei > buyRaiseAllowance
 
+  /** ERC20 direct buy: allowance not yet known (never show Buy until we have a value). */
+  const buyRaiseAllowanceLoading =
+    !isNativeRaise &&
+    buyPaymentMode === 'raise' &&
+    raiseTokenAddr !== undefined &&
+    buyRaiseWei > 0n &&
+    buyRaiseAllowance === undefined &&
+    !buyRaiseAllowanceError
+
   const bnbBuyQuoteReady =
     !isNativeRaise &&
     buyPaymentMode === 'bnb' &&
@@ -845,6 +886,8 @@ export function useBondingCurve(overrides?: BondingCurveOverrides) {
     sellAllowance,
     needsApproveForSell,
     needsApproveForBuy,
+    buyRaiseAllowanceLoading,
+    buyRaiseAllowanceError,
     approveSell,
     approveBuyRaise,
     buy,
@@ -862,7 +905,7 @@ export function useBondingCurve(overrides?: BondingCurveOverrides) {
     raiseUnitDecimals,
     raiseTokenBalance,
     nativeBalanceWei,
-    /** Đã đọc xong tokenRaise on-chain — tránh flash UI sai native/ERC20 */
+    /** Finished reading `tokenRaise` on-chain — avoids flashing wrong native/ERC20 UI */
     raiseKindReady: raiseKindReadyEarly,
     buyPerTxLimits,
     buyQuoteExceedsMax,

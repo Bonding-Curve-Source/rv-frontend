@@ -7,6 +7,7 @@ import { Button } from '@/components/Button'
 import { Card } from '@/components/Card'
 import { PixelSpinner } from '@/components/PixelSpinner'
 import type { CreateTokenForm } from '@/hooks/useCreateToken'
+import { useAuthGate } from '@/hooks/useAuthGate'
 import { useCreateToken } from '@/hooks/useCreateToken'
 import { useRaiseConfig } from '@/hooks/useRaiseConfig'
 import type { RaiseTokenDto, RaiseValueDto } from '@/services/raise-config'
@@ -24,7 +25,7 @@ function isSameRaiseToken(selected: Address, row: RaiseTokenDto) {
   return addrKey(selected) === addrKey(row.tokenAddress)
 }
 
-/** Một bảng cap chung: sort theo value, dedupe theo số (không lọc theo token raise). */
+/** Shared cap table: sort by value, dedupe by number (not filtered by raise token). */
 function sortDedupeRaiseValues(rows: RaiseValueDto[]): RaiseValueDto[] {
   const seen = new Set<number>()
   const out: RaiseValueDto[] = []
@@ -76,6 +77,7 @@ function Field({
 
 export function CreateTokenPage() {
   const queryClient = useQueryClient()
+  const { ensureSignedIn, isConnected, isAuthenticated } = useAuthGate()
 
   const [form, setForm] = useState<CreateTokenForm>({
     name: '',
@@ -189,7 +191,8 @@ export function CreateTokenPage() {
     (erc20Raise && !raiseOk) ||
     !hasCapPreset ||
     curveDeployerLoading ||
-    !curveDeployerReady
+    !curveDeployerReady ||
+    !isConnected
 
   return (
     <div className="mx-auto max-w-lg px-4 py-8">
@@ -217,9 +220,9 @@ export function CreateTokenPage() {
           <div className="space-y-2 font-pixel text-[9px] leading-relaxed text-[#ff6b6b]">
             <p>
               On-chain <code className="text-[#ffee00]">curveDeployer</code> ={' '}
-              <strong>0x0</strong>. Sau deploy cần:{' '}
+              <strong>0x0</strong>. After deploy, run{' '}
               <code className="text-[#a78bfa]">BondingCurveDeployer(TokenFactory)</code>{' '}
-              rồi <code className="text-[#a78bfa]">setCurveDeployer</code> (xem{' '}
+              then <code className="text-[#a78bfa]">setCurveDeployer</code> (see{' '}
               <code className="text-[#e9d5ff]">contract-bonding/scripts/deploy.js</code>
               ).
             </p>
@@ -260,14 +263,14 @@ export function CreateTokenPage() {
                   </div>
                 ) : raiseError ? (
                   <p className="mt-2 font-pixel text-[8px] text-[#ff6b6b]">
-                    Không tải được cấu hình raise — kiểm tra{' '}
-                    <code className="text-[#ffee00]">VITE_API_BASE_URL</code> và
-                    API <code className="text-[#a78bfa]">GET /raise-config</code>
-                    .
+                    Could not load raise config — check{' '}
+                    <code className="text-[#ffee00]">VITE_API_BASE_URL</code> and
+                    the <code className="text-[#a78bfa]">GET /raise-config</code>{' '}
+                    API.
                   </p>
                 ) : raiseTokens.length === 0 ? (
                   <p className="mt-2 font-pixel text-[8px] text-[#a78bfa]">
-                    Chưa có RaiseToken trên server — seed DB hoặc thêm bản ghi.
+                    No RaiseToken rows on the server — seed the DB or add records.
                   </p>
                 ) : (
                   <div className="mt-3 flex flex-wrap gap-x-2 gap-y-4">
@@ -301,21 +304,21 @@ export function CreateTokenPage() {
 
               {erc20Raise && raiseTokenCheckLoading ? (
                 <p className="font-pixel text-[8px] text-[#a78bfa]">
-                  Đang đọc on-chain{' '}
-                  <code className="text-[#ffee00]">raiseAllowedTokens(…)</code> trên
-                  factory…
+                  Reading on-chain{' '}
+                  <code className="text-[#ffee00]">raiseAllowedTokens(…)</code> on
+                  the factory…
                 </p>
               ) : null}
               {erc20Raise && raiseTokenCheckError ? (
                 <p className="font-pixel text-[8px] text-[#ff6b6b]">
-                  Không gọi được contract (RPC). Kiểm tra mạng /{' '}
+                  Could not call the contract (RPC). Check the network /{' '}
                   <code className="text-[#ffee00]">VITE_RPC_URL</code>.{' '}
                   <button
                     type="button"
                     className="underline text-[#ffee00]"
                     onClick={() => void refetchRaiseTokenAllowed()}
                   >
-                    Thử lại
+                    Retry
                   </button>
                 </p>
               ) : null}
@@ -327,13 +330,13 @@ export function CreateTokenPage() {
                   <p>
                     On-chain{' '}
                     <code className="text-[#ffee00]">raiseAllowedTokens</code>
-                    (địa chỉ token ERC20) = <strong>false</strong>. Danh sách nút
-                    trên chỉ lấy từ API — owner vẫn phải gọi{' '}
+                    (ERC20 token address) = <strong>false</strong>. The buttons
+                    above are API-only — the owner must still call{' '}
                     <code className="text-[#ffee00]">setRaiseAllowedToken</code>{' '}
-                    trên đúng factory mà FE trỏ tới.
+                    on the factory this frontend points to.
                   </p>
                   <p className="text-[7px] text-[#fbbf24]">
-                    Factory đang đọc (env{' '}
+                    Factory in use (env{' '}
                     <code className="text-[#a78bfa]">VITE_MEME_FACTORY_ADDRESS</code>
                     ):{' '}
                     <code className="break-all text-[#e9d5ff]">
@@ -341,8 +344,8 @@ export function CreateTokenPage() {
                     </code>
                   </p>
                   <p>
-                    Chọn BNB (native) hoặc liên hệ owner whitelist token này trên
-                    factory trên.
+                    Pick BNB (native) or ask the owner to whitelist this token on
+                    that factory.
                   </p>
                 </div>
               ) : null}
@@ -375,12 +378,12 @@ export function CreateTokenPage() {
                   </div>
                 ) : (
                   <p className="mt-2 font-pixel text-[8px] text-[#a78bfa]">
-                    Chưa có mức cap trong RaiseValue — seed DB.
+                    No cap presets in RaiseValue — seed the DB.
                   </p>
                 )}
                 <p className="mt-2 font-pixel text-[7px] text-[#6b7280]">
-                  Chọn một mức cap (USD) → on-chain{' '}
-                  <code className="text-[#a78bfa]">targetValue</code> scale 1e18.
+                  Pick a cap (USD) → on-chain{' '}
+                  <code className="text-[#a78bfa]">targetValue</code> scaled 1e18.
                 </p>
               </div>
 
@@ -437,10 +440,21 @@ export function CreateTokenPage() {
             <Button
               className="mt-6 w-full py-3"
               disabled={createDisabled}
-              onClick={() => void createToken(form)}
+              onClick={async () => {
+                if (createDisabled) return
+                if (!(await ensureSignedIn())) return
+                void createToken(form)
+              }}
             >
               {busy ? 'Processing…' : 'Pay fee & create token'}
             </Button>
+
+            {isConnected && !isAuthenticated ? (
+              <p className="mt-3 font-pixel text-[7px] leading-relaxed text-[#fbbf24]">
+                Creating a token requires a sign-in message — the button opens
+                signing before sending the transaction.
+              </p>
+            ) : null}
 
             {busy ? (
               <div className="mt-6 flex justify-center">

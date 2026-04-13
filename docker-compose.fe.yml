@@ -1,0 +1,14 @@
+services:
+  fe-bonding:
+    image: ghcr.io/tungxng/fe:latest
+    platform: linux/amd64
+    container_name: fe-bonding
+    ports:
+      - "8080:80"
+    networks:
+      - bonding-net
+
+networks:
+  bonding-net:
+    name: bonding-net
+    driver: bridge

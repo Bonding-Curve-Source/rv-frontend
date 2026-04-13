@@ -7,7 +7,7 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-/** Khớp Prisma `RaiseToken` từ be-bonding */
+/** Matches Prisma `RaiseToken` from be-bonding */
 export type RaiseTokenDto = {
   id: number
   tokenAddress: string
@@ -18,7 +18,7 @@ export type RaiseTokenDto = {
   updatedAt: string
 }
 
-/** Khớp Prisma `RaiseValue` từ be-bonding */
+/** Matches Prisma `RaiseValue` from be-bonding */
 export type RaiseValueDto = {
   id: number
   value: number

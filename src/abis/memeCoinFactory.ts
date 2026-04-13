@@ -1,4 +1,4 @@
-/** TokenFactory — đồng bộ contract-bonding (chạy `npm run export:fe-abis` trong contract-bonding). */
+/** TokenFactory — synced with contract-bonding (run `npm run export:fe-abis` in contract-bonding). */
 export const memeCoinFactoryAbi = [
   {
     "inputs": [],

@@ -47,7 +47,7 @@ function clampDecimalPlaces(value: string, maxDecimals: number): string {
 }
 
 /**
- * `targetValue` từ API (chuỗi uint256) — cùng scale 1e18 với createToken (mục tiêu USD on-chain).
+ * `targetValue` from the API (uint256 string) — same 1e18 scale as createToken (USD target on-chain).
  */
 export function formatUsdTargetFromApi(
   raw: string | undefined,

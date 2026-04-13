@@ -25,6 +25,8 @@ export function useBondingDexSplit(tokens: BondToken[] | undefined) {
     contracts,
     query: {
       enabled: Boolean(tokens?.length),
+      /** Bonding → graduated (`isDex`) flips on-chain; poll so columns update without reload. */
+      refetchInterval: 8_000,
     },
   })
 
