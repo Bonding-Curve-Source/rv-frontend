@@ -1,0 +1,77 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-pixel: 'Press Start 2P', ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: none;
+    image-rendering: pixelated;
+  }
+}
+
+.font-pixel {
+  font-family: var(--font-pixel), ui-monospace, monospace;
+}
+
+.retro-card {
+  @apply border-4 border-black bg-[#2d1b4e] shadow-[8px_8px_0_0_#000];
+  animation: card-pop 0.35s ease-out;
+}
+
+.pixel-btn {
+  @apply border-4 border-black shadow-[4px_4px_0_0_#000] transition-transform;
+}
+
+.pixel-box {
+  border: 2px solid #000;
+  image-rendering: pixelated;
+}
+
+@keyframes card-pop {
+  0% {
+    transform: translate(6px, 6px);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-float {
+  animation: float-y 2.8s ease-in-out infinite;
+}
+
+.pixel-spin span {
+  animation: pixel-blink 0.7s steps(2, end) infinite;
+}
+
+.animation-delay-100 {
+  animation-delay: 0.08s;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.16s;
+}
+
+@keyframes pixel-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
