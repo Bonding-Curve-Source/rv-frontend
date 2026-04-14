@@ -4,6 +4,8 @@ import { ContactFooter } from '@/components/ContactFooter'
 import { Navbar } from '@/components/Navbar'
 import { BondPage } from '@/pages/BondPage'
 import { CreateTokenPage } from '@/pages/CreateTokenPage'
+import { DesignPage } from '@/pages/DesignPage'
+import { FaucetPage } from '@/pages/FaucetPage'
 import { SwapPage } from '@/pages/SwapPage'
 
 export default function App() {
@@ -17,6 +19,8 @@ export default function App() {
             <Route path="/bond" element={<BondPage />} />
             <Route path="/swap" element={<SwapPage />} />
             <Route path="/create" element={<CreateTokenPage />} />
+            <Route path="/design" element={<DesignPage />} />
+            <Route path="/faucet" element={<FaucetPage />} />
           </Routes>
         </main>
         <ContactFooter />

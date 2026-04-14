@@ -39,6 +39,12 @@ export function Navbar() {
             <NavLink to="/create" className={linkClass}>
               Launch
             </NavLink>
+            <NavLink to="/design" className={linkClass}>
+              Design
+            </NavLink>
+            <NavLink to="/faucet" className={linkClass}>
+              Faucet
+            </NavLink>
           </nav>
           <div className="flex flex-wrap items-center gap-2">
             {isConnected && address ? (

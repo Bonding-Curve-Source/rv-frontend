@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-
 import { BondTokenRow } from '@/components/BondTokenRow'
 import { BondTradeModal } from '@/components/BondTradeModal'
 import { Card } from '@/components/Card'
@@ -66,9 +65,10 @@ export function BondPage() {
           BONDING CURVE
         </h1>
         <p className="mt-2 font-pixel text-[8px] text-[#a78bfa]">
-          Bonding vs graduated · Buy with ETH · Sell tokens
+          Bonding vs graduated
         </p>
       </div>
+
 
       {isLoading ? (
         <div className="flex justify-center py-12">
