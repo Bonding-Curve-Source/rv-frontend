@@ -113,7 +113,7 @@ function TokenSymbol({
 
 export function SwapForm({
   swap,
-  title = 'Uniswap V2 style',
+  title = 'Swap',
   raiseLabel = 'BNB',
   memeLabel = 'TOKEN',
   nativeLabel = 'BNB',

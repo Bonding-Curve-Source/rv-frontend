@@ -63,7 +63,7 @@ export function SwapModal({ token, onClose }: Props) {
             id="swap-modal-title"
             className="font-pixel text-xs text-[#4ecdc4] drop-shadow-[3px_3px_0_#000]"
           >
-            DEX SWAP — {token.name}{' '}
+            RAVI SWAP — {token.name}{' '}
             <span className="text-[#ffee00]">({token.symbol})</span>
           </h2>
           <p className="mt-1 font-pixel text-[7px] text-[#a78bfa]">
