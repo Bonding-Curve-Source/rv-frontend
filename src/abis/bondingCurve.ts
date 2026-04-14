@@ -1,4 +1,4 @@
-/** BondingCurve — synced with contract-bonding. */
+/** BondingCurve — đồng bộ contract-bonding. */
 export const bondingCurveAbi = [
   {
     "inputs": [

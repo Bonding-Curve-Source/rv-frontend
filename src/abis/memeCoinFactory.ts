@@ -1,4 +1,4 @@
-/** TokenFactory — synced with contract-bonding (run `npm run export:fe-abis` in contract-bonding). */
+/** TokenFactory — đồng bộ contract-bonding (chạy `npm run export:fe-abis` trong contract-bonding). */
 export const memeCoinFactoryAbi = [
   {
     "inputs": [],
@@ -909,6 +909,19 @@ export const memeCoinFactoryAbi = [
   {
     "inputs": [],
     "name": "withdrawFees",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "withdrawTokenFees",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

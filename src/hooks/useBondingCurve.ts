@@ -55,6 +55,14 @@ function parseContractError(e: unknown): string {
   return e instanceof Error ? e.message : 'Transaction failed'
 }
 
+function raiseQuoteExceedsPerOrderLimit(quoteWei: bigint, maxRaw: bigint): boolean {
+  if (quoteWei <= 0n || maxRaw <= 0n) return false
+  if (quoteWei <= maxRaw) return false
+  const overshoot = quoteWei - maxRaw
+  const slack = maxRaw / 10000n > 0n ? maxRaw / 10000n : 1n
+  return overshoot > slack
+}
+
 export type BondingCurveOverrides = {
   tokenAddress: Address
   bondingCurveAddress: Address
@@ -282,7 +290,7 @@ export function useBondingCurve(overrides?: BondingCurveOverrides) {
   const chainNow = block?.timestamp
 
   const buyPerTxLimits = useMemo(() => {
-    const duration = antiBotDurationSec ?? 300n
+    const duration = antiBotDurationSec ?? 60n
     const maxNorm = maxBuyAmountRaw ?? 0n
     const maxAnti = maxBuyInitialAntiBotRaw ?? 0n
     const launchedAt = launchTime ?? 0n
@@ -338,7 +346,7 @@ export function useBondingCurve(overrides?: BondingCurveOverrides) {
   const buyQuoteExceedsMax =
     buyQuoteWei > 0n &&
     buyPerTxLimits.effectiveMaxRaw > 0n &&
-    buyQuoteWei > buyPerTxLimits.effectiveMaxRaw
+    raiseQuoteExceedsPerOrderLimit(buyQuoteWei, buyPerTxLimits.effectiveMaxRaw)
 
   const tokenSellWei = useMemo(
     () => safeParseUnits(sellTokenStr, Number(decimals)),

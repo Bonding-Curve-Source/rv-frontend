@@ -10,6 +10,8 @@ interface ImportMetaEnv {
   readonly VITE_UNISWAP_V2_ROUTER?: string
   readonly VITE_MEME_FACTORY_ADDRESS?: string
   readonly VITE_WALLETCONNECT_PROJECT_ID?: string
+  readonly VITE_CONTACT_EMAIL?: string
+  readonly VITE_CONTACT_TELEGRAM?: string
 }
 
 interface ImportMeta {

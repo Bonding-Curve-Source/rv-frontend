@@ -27,7 +27,7 @@ export function Navbar() {
             to="/bond"
             className="font-pixel text-[10px] text-[#7cff00] drop-shadow-[2px_2px_0_#000]"
           >
-            BONDING ARCADE
+            RV BONDING
           </Link>
           <nav className="flex flex-wrap items-center gap-2">
             <NavLink to="/bond" className={linkClass}>

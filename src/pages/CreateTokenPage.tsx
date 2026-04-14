@@ -8,6 +8,7 @@ import { Card } from '@/components/Card'
 import { PixelSpinner } from '@/components/PixelSpinner'
 import type { CreateTokenForm } from '@/hooks/useCreateToken'
 import { useAuthGate } from '@/hooks/useAuthGate'
+import { useBnbRoughFromUsd } from '@/hooks/useBnbRoughFromUsd'
 import { useCreateToken } from '@/hooks/useCreateToken'
 import { useRaiseConfig } from '@/hooks/useRaiseConfig'
 import type { RaiseTokenDto, RaiseValueDto } from '@/services/raise-config'
@@ -141,6 +142,8 @@ export function CreateTokenPage() {
   }
 
   const capNum = Number(form.targetMarketCapUsd.trim().replace(/,/g, ''))
+
+  const { bnbApproxLabel } = useBnbRoughFromUsd(capNum)
 
   const {
     factoryAddress,
@@ -381,10 +384,11 @@ export function CreateTokenPage() {
                     No cap presets in RaiseValue — seed the DB.
                   </p>
                 )}
-                <p className="mt-2 font-pixel text-[7px] text-[#6b7280]">
-                  Pick a cap (USD) → on-chain{' '}
-                  <code className="text-[#a78bfa]">targetValue</code> scaled 1e18.
-                </p>
+                {!Number.isNaN(capNum) && capNum > 0 && bnbApproxLabel ? (
+                  <p className="mt-2 font-pixel text-[8px] font-normal tracking-wide text-[#7cff00] drop-shadow-[0_0_6px_rgba(124,255,0,0.55)]">
+                    ~{bnbApproxLabel} BNB
+                  </p>
+                ) : null}
               </div>
 
               <Field
